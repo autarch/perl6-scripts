@@ -1,0 +1,37 @@
+use v6;
+
+use Text::CSV;
+
+sub MAIN ( IO() :$in, IO() :$out ) {
+    my $csv_in = Text::CSV.new;
+    my $csv_out = Text::CSV.new( :eol("\r\n") );
+
+    my $in_fh = $in.open(:r);
+    my $out_fh = $out.open(:w);
+
+    $csv_out.print( $out_fh, < person_id event > );
+
+    my $position;
+    while my @fields = $csv_in.getline($in_fh) {
+        next unless @fields.any;
+
+        if @fields[0] ~~ m/^ <[ A .. Z \c[SPACE] ]>+ $/ {
+            $position = @fields[0].words.map({ $_ eq any(< CAA PPV >) ?? .uc !! .tclc }).join(q{ });
+            next;
+        }
+
+        next unless @fields[*-1] ~~ m/<[ y x ]>/;
+
+        die 'No position defined yet'
+            unless defined $position;
+
+        my $event = 'Twin Cities Veg Fest 2015 ';
+        $event ~= $position;
+        $event ~= q{ } ~ @fields[0] if @fields[0];
+
+        my $id = @fields[*-2]
+            or die "No id in {@fields.perl}";
+
+        $csv_out.print( $out_fh, $id, $event );
+    }
+}
